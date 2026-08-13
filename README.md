@@ -32,7 +32,13 @@ Create a production build with:
 npm run build
 ```
 
-The current build targets Cloudflare Workers through Vinext, but the app itself is fully client-side and has no database or API dependency.
+The production build creates a static export in `out/`. The Cloudflare Worker build remains available through `npm run build:worker`.
+
+## Live site
+
+The `main` branch is deployed automatically to GitHub Pages:
+
+<https://pinchitos.github.io/TarkovTools/>
 
 ## Privacy
 

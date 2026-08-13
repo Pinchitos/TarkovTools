@@ -6,9 +6,11 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vinext build",
-    "start": "vinext start",
+    "dev": "next dev",
+    "build": "next build",
+    "build:worker": "vinext build",
+    "dev:worker": "vite",
+    "start:worker": "vinext start",
     "test": "npm run lint && npm run build",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },

@@ -6,16 +6,17 @@ import { useEffect, useMemo, useState } from "react";
 
 type DocKey = "technical" | "medical" | "user" | "test" | "blueprints" | "project" | "pmc" | "financial";
 type DocInfo = { key: DocKey; name: string; short: string; image: string; maps: string[] };
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const documents: DocInfo[] = [
-  { key: "technical", name: "Technical Documentation", short: "Technical", image: "/docs/technical.png", maps: ["Shoreline", "Woods", "Lighthouse"] },
-  { key: "medical", name: "Medical Documents", short: "Medical", image: "/docs/medical.png", maps: ["The Lab", "Ground Zero", "The Labyrinth"] },
-  { key: "user", name: "User Documentation", short: "User", image: "/docs/user.png", maps: ["Ground Zero", "Streets of Tarkov", "The Lab"] },
-  { key: "test", name: "Test Documentation", short: "Test", image: "/docs/test.png", maps: ["Shoreline", "Woods", "Icebreaker"] },
-  { key: "blueprints", name: "Blueprints & Technical", short: "Blueprints", image: "/docs/blueprints.png", maps: ["Interchange", "Factory", "The Labyrinth"] },
-  { key: "project", name: "Project Documentation", short: "Project", image: "/docs/project.png", maps: ["Factory", "Reserve", "Customs"] },
-  { key: "pmc", name: "PMC Personnel Files", short: "PMC Files", image: "/docs/pmc.png", maps: ["Reserve", "Lighthouse", "Icebreaker"] },
-  { key: "financial", name: "Financial Documents", short: "Financial", image: "/docs/financial.png", maps: ["Customs", "Streets of Tarkov", "Interchange"] },
+  { key: "technical", name: "Technical Documentation", short: "Technical", image: `${basePath}/docs/technical.png`, maps: ["Shoreline", "Woods", "Lighthouse"] },
+  { key: "medical", name: "Medical Documents", short: "Medical", image: `${basePath}/docs/medical.png`, maps: ["The Lab", "Ground Zero", "The Labyrinth"] },
+  { key: "user", name: "User Documentation", short: "User", image: `${basePath}/docs/user.png`, maps: ["Ground Zero", "Streets of Tarkov", "The Lab"] },
+  { key: "test", name: "Test Documentation", short: "Test", image: `${basePath}/docs/test.png`, maps: ["Shoreline", "Woods", "Icebreaker"] },
+  { key: "blueprints", name: "Blueprints & Technical", short: "Blueprints", image: `${basePath}/docs/blueprints.png`, maps: ["Interchange", "Factory", "The Labyrinth"] },
+  { key: "project", name: "Project Documentation", short: "Project", image: `${basePath}/docs/project.png`, maps: ["Factory", "Reserve", "Customs"] },
+  { key: "pmc", name: "PMC Personnel Files", short: "PMC Files", image: `${basePath}/docs/pmc.png`, maps: ["Reserve", "Lighthouse", "Icebreaker"] },
+  { key: "financial", name: "Financial Documents", short: "Financial", image: `${basePath}/docs/financial.png`, maps: ["Customs", "Streets of Tarkov", "Interchange"] },
 ];
 
 const sample: Record<DocKey, number> = { technical: 8, medical: 3, user: 5, test: 4, blueprints: 7, project: 2, pmc: 4, financial: 6 };
@@ -113,7 +114,7 @@ export default function Home() {
             <div className="doc-body"><h3>{doc.name}</h3><div className="need-control"><button aria-label={`Decrease ${doc.short}`} onClick={() => updateNeed(doc.key, remaining[doc.key] - 1)}>−</button><input aria-label={`${doc.short} remaining`} type="number" min="0" value={remaining[doc.key]} onChange={(e) => updateNeed(doc.key, Number(e.target.value))} /><button aria-label={`Increase ${doc.short}`} onClick={() => updateNeed(doc.key, remaining[doc.key] + 1)}>+</button></div><button className="collect" disabled={done || cap === 0} onClick={() => collect(doc.key)}>{done ? "✓ DO NOT PICK UP" : "+ COLLECT ONE"}</button></div>
           </article>;
         })}</div>
-        <div className="classified-card"><img src="/docs/classified.png" alt="Classified Documents" /><div><span>09 // UNIVERSAL SUBSTITUTE</span><h3>CLASSIFIED DOCUMENTS</h3><p>Use these in-game against whichever requirement you choose, then reduce that document above.</p></div><b>ANY TYPE</b></div>
+        <div className="classified-card"><img src={`${basePath}/docs/classified.png`} alt="Classified Documents" /><div><span>09 // UNIVERSAL SUBSTITUTE</span><h3>CLASSIFIED DOCUMENTS</h3><p>Use these in-game against whichever requirement you choose, then reduce that document above.</p></div><b>ANY TYPE</b></div>
       </section>
 
       <aside className="panel route-panel">
