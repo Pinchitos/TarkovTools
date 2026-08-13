@@ -1,157 +1,86 @@
-"use client";
-
-/* eslint-disable react-hooks/set-state-in-effect -- hydrate browser-only saved state after mount */
-
-import { useEffect, useMemo, useState } from "react";
-
-type DocKey = "technical" | "medical" | "user" | "test" | "blueprints" | "project" | "pmc" | "financial";
-type DocInfo = { key: DocKey; name: string; short: string; image: string; maps: string[] };
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-const documents: DocInfo[] = [
-  { key: "technical", name: "Technical Documentation", short: "Technical", image: `${basePath}/docs/technical.png`, maps: ["Shoreline", "Woods", "Lighthouse"] },
-  { key: "medical", name: "Medical Documents", short: "Medical", image: `${basePath}/docs/medical.png`, maps: ["The Lab", "Ground Zero", "The Labyrinth"] },
-  { key: "user", name: "User Documentation", short: "User", image: `${basePath}/docs/user.png`, maps: ["Ground Zero", "Streets of Tarkov", "The Lab"] },
-  { key: "test", name: "Test Documentation", short: "Test", image: `${basePath}/docs/test.png`, maps: ["Shoreline", "Woods", "Icebreaker"] },
-  { key: "blueprints", name: "Blueprints & Technical", short: "Blueprints", image: `${basePath}/docs/blueprints.png`, maps: ["Interchange", "Factory", "The Labyrinth"] },
-  { key: "project", name: "Project Documentation", short: "Project", image: `${basePath}/docs/project.png`, maps: ["Factory", "Reserve", "Customs"] },
-  { key: "pmc", name: "PMC Personnel Files", short: "PMC Files", image: `${basePath}/docs/pmc.png`, maps: ["Reserve", "Lighthouse", "Icebreaker"] },
-  { key: "financial", name: "Financial Documents", short: "Financial", image: `${basePath}/docs/financial.png`, maps: ["Customs", "Streets of Tarkov", "Interchange"] },
+const documentImages = ["financial", "pmc", "project", "blueprints", "test", "user"];
+
+const plannedTools = [
+  { code: "02", name: "AMMO ANALYSIS", copy: "Compare penetration, damage and armor performance without opening twelve wiki tabs." },
+  { code: "03", name: "HIDEOUT LEDGER", copy: "Track upgrade materials, flea costs and the items still buried somewhere in your stash." },
+  { code: "04", name: "QUEST OPERATIONS", copy: "Turn active objectives into a raid plan instead of discovering the route after deployment." },
 ];
 
-const sample: Record<DocKey, number> = { technical: 8, medical: 3, user: 5, test: 4, blueprints: 7, project: 2, pmc: 4, financial: 6 };
-const blank = (): Record<DocKey, number> => Object.fromEntries(documents.map((doc) => [doc.key, 0])) as Record<DocKey, number>;
-const mapNames = Array.from(new Set(documents.flatMap((doc) => doc.maps)));
-const mapIds: Record<string, string> = {
-  "Customs": "customs",
-  "Ground Zero": "ground_zero",
-  "Factory": "factory",
-  "Icebreaker": "icebreaker",
-  "Interchange": "interchange",
-  "The Lab": "lab",
-  "The Labyrinth": "labyrinth",
-  "Lighthouse": "lighthouse",
-  "Reserve": "reserve",
-  "Shoreline": "shoreline",
-  "Streets of Tarkov": "streets_of_tarkov",
-  "Woods": "woods",
-};
-const mapHref = (name: string) => `https://perofunyang.github.io/battlepass_interactive_map/en.html?map=${mapIds[name]}`;
+export default function TarkovToolsHub() {
+  return (
+    <main className="hub-page">
+      <div className="noise" />
 
-export default function Home() {
-  const [remaining, setRemaining] = useState<Record<DocKey, number>>(sample);
-  const [dailyLimit, setDailyLimit] = useState(30);
-  const [cap, setCap] = useState(30);
-  const [history, setHistory] = useState<{ key?: DocKey; wasted?: boolean }[]>([]);
-  const [enabledMaps, setEnabledMaps] = useState<string[]>(mapNames);
-  const [ready, setReady] = useState(false);
+      <header className="hub-nav">
+        <a className="hub-logo" href={`${basePath}/`} aria-label="TarkovTools home">
+          <span className="hub-logo-mark">TT</span>
+          <span><b>TARKOV</b>TOOLS<small>COMMUNITY FIELD SYSTEMS</small></span>
+        </a>
+        <div className="hub-nav-status"><i /> SYSTEM ONLINE <b>01 MODULE ACTIVE</b></div>
+      </header>
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("kord-breach-planner");
-    if (saved) {
-      try {
-        const state = JSON.parse(saved);
-        setRemaining({ ...blank(), ...state.remaining });
-        setDailyLimit(state.dailyLimit ?? 30);
-        setCap(state.cap ?? 30);
-        setEnabledMaps(Array.isArray(state.enabledMaps) ? state.enabledMaps.filter((map: string) => mapNames.includes(map)) : mapNames);
-      } catch { /* Keep the demo state if storage is malformed. */ }
-    }
-    setReady(true);
-  }, []);
+      <section className="hub-hero">
+        <div className="hub-hero-copy">
+          <div className="hub-kicker"><span>FIELD TERMINAL</span><i />UNOFFICIAL COMMUNITY TOOLKIT</div>
+          <h1>PLAN THE RAID.<br /><em>KEEP THE RUBLES.</em></h1>
+          <p>A growing collection of practical Escape from Tarkov utilities. Built for fewer spreadsheets, cleaner routes and slightly less suffering.</p>
+          <div className="hub-actions">
+            <a className="hub-primary" href={`${basePath}/kord-breach-planner/`}>OPEN KORD BREACH PLANNER <span>↗</span></a>
+            <a className="hub-secondary" href="https://github.com/Pinchitos/TarkovTools" target="_blank" rel="noopener noreferrer">VIEW SOURCE ↗</a>
+          </div>
+          <dl className="hub-readout">
+            <div><dt>01</dt><dd>LIVE TOOL</dd></div>
+            <div><dt>LOCAL</dt><dd>DATA STORAGE</dd></div>
+            <div><dt>FREE</dt><dd>COMMUNITY USE</dd></div>
+          </dl>
+        </div>
 
-  useEffect(() => {
-    if (ready) window.localStorage.setItem("kord-breach-planner", JSON.stringify({ remaining, dailyLimit, cap, enabledMaps }));
-  }, [remaining, dailyLimit, cap, enabledMaps, ready]);
-
-  const ranking = useMemo(() => mapNames.filter((name) => enabledMaps.includes(name)).map((name) => {
-    const useful = documents.filter((doc) => doc.maps.includes(name) && remaining[doc.key] > 0).map((doc) => ({ doc, amount: Math.min(remaining[doc.key], 5) }));
-    const rawScore = useful.reduce((sum, item) => sum + item.amount, 0);
-    return { name, useful, score: Math.min(cap, rawScore) };
-  }).filter((map) => map.score > 0).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)), [remaining, cap, enabledMaps]);
-
-  const bestScore = ranking[0]?.score ?? 0;
-  const best = ranking.filter((map) => map.score === bestScore);
-  const totalRemaining = Object.values(remaining).reduce((sum, value) => sum + value, 0);
-
-  function updateNeed(key: DocKey, value: number) { setRemaining((current) => ({ ...current, [key]: Math.max(0, Math.floor(value || 0)) })); }
-  function collect(key: DocKey) {
-    if (cap <= 0 || remaining[key] <= 0) return;
-    setRemaining((current) => ({ ...current, [key]: current[key] - 1 }));
-    setCap((current) => current - 1);
-    setHistory((current) => [...current, { key }]);
-  }
-  function waste() { if (cap > 0) { setCap((current) => current - 1); setHistory((current) => [...current, { wasted: true }]); } }
-  function undo() {
-    const last = history.at(-1); if (!last) return;
-    if (last.key) setRemaining((current) => ({ ...current, [last.key!]: current[last.key!] + 1 }));
-    setCap((current) => Math.min(dailyLimit, current + 1)); setHistory((current) => current.slice(0, -1));
-  }
-  function toggleMap(name: string) {
-    setEnabledMaps((current) => current.includes(name) ? current.filter((map) => map !== name) : [...current, name]);
-  }
-
-  return <main>
-    <div className="noise" />
-    <header className="topbar">
-      <div className="brand-mark"><span>KB</span><i /></div>
-      <div className="brand-copy"><p>KORD BREACH // FIELD UTILITY</p><h1>DOCUMENT ROUTE PLANNER</h1></div>
-      <div className="status"><span className="status-dot" />LOCAL DATA <b>ONLINE</b></div>
-    </header>
-
-    <section className="command-strip">
-      <div className="cap-control"><span className="eyebrow">DAILY EXTRACTION CAP</span><div className="cap-number"><strong>{cap}</strong><span>/</span><input aria-label="Daily document limit" type="number" min="1" value={dailyLimit} onChange={(e) => { const next = Math.max(1, Number(e.target.value) || 1); setDailyLimit(next); setCap((current) => Math.min(current, next)); }} /></div><div className="cap-bar"><i style={{ width: `${Math.min(100, (cap / dailyLimit) * 100)}%` }} /></div><small>{cap === 0 ? "LIMIT REACHED — EXTRACT" : `${cap} DOCUMENT SLOTS REMAINING`}</small></div>
-      <div className="strip-actions"><button className="ghost" onClick={undo} disabled={!history.length}>↶ UNDO LAST</button><button className="ghost danger" onClick={waste} disabled={cap === 0}>+1 WASTED</button><button className="primary" onClick={() => { setCap(dailyLimit); setHistory([]); }}>NEW DAY <span>↗</span></button></div>
-    </section>
-
-    <div className="layout">
-      <section className="panel inventory-panel">
-        <div className="section-heading"><div><span className="section-no">01</span><h2>REQUIRED DOCUMENTS</h2><p>Enter any target: one reward, one page, or the full pass.</p></div><button className="text-button" onClick={() => { setRemaining(blank()); setHistory([]); }}>CLEAR ALL</button></div>
-        <div className="doc-grid">{documents.map((doc) => {
-          const done = remaining[doc.key] === 0;
-          return <article className={`doc-card ${done ? "done" : ""}`} key={doc.key}>
-            <div className="doc-image"><img src={doc.image} alt={doc.name} /></div>
-            <div className="doc-body"><h3>{doc.name}</h3><div className="need-control"><button aria-label={`Decrease ${doc.short}`} onClick={() => updateNeed(doc.key, remaining[doc.key] - 1)}>−</button><input aria-label={`${doc.short} remaining`} type="number" min="0" value={remaining[doc.key]} onChange={(e) => updateNeed(doc.key, Number(e.target.value))} /><button aria-label={`Increase ${doc.short}`} onClick={() => updateNeed(doc.key, remaining[doc.key] + 1)}>+</button></div><button className="collect" disabled={done || cap === 0} onClick={() => collect(doc.key)}>{done ? "✓ DO NOT PICK UP" : "+ COLLECT ONE"}</button></div>
-          </article>;
-        })}</div>
-        <div className="classified-card"><img src={`${basePath}/docs/classified.png`} alt="Classified Documents" /><div><span>09 // UNIVERSAL SUBSTITUTE</span><h3>CLASSIFIED DOCUMENTS</h3><p>Use these in-game against whichever requirement you choose, then reduce that document above.</p></div><b>ANY TYPE</b></div>
+        <a className="hub-featured-visual" href={`${basePath}/kord-breach-planner/`} aria-label="Open Kord Breach Document Route Planner">
+          <div className="hub-visual-head"><span>UTILITY // 01</span><b>DEPLOYED</b></div>
+          <div className="hub-doc-stack">
+            {documentImages.map((name) => (
+              <div className="hub-doc-tile" key={name}>
+                <img src={`${basePath}/docs/${name}.png`} alt="" />
+              </div>
+            ))}
+          </div>
+          <div className="hub-visual-foot">
+            <div><small>KORD BREACH</small><strong>DOCUMENT ROUTE<br />PLANNER</strong></div>
+            <span>ENTER<br />UTILITY ↗</span>
+          </div>
+        </a>
       </section>
 
-      <aside className="panel route-panel">
-        <div className="section-heading compact"><div><span className="section-no">02</span><h2>LIVE ROUTE</h2><p>Recalculates after every pickup.</p></div></div>
-        <div className="map-filter">
-          <div className="filter-heading"><div><span>MAP ACCESS FILTER</span><small>{enabledMaps.length}/{mapNames.length} AVAILABLE</small></div><button onClick={() => setEnabledMaps(mapNames)}>ENABLE ALL</button></div>
-          <div className="map-toggles">{mapNames.map((name) => {
-            const enabled = enabledMaps.includes(name);
-            return <button key={name} aria-pressed={enabled} aria-label={`${enabled ? "Disable" : "Enable"} ${name}`} className={enabled ? "enabled" : "disabled"} onClick={() => toggleMap(name)}><i />{name}<b>{enabled ? "ON" : "LOCKED"}</b></button>;
-          })}</div>
+      <section className="hub-registry" aria-labelledby="registry-title">
+        <div className="hub-section-head">
+          <div><span>01 // TOOL REGISTRY</span><h2 id="registry-title">FIELD UTILITIES</h2></div>
+          <p>One repo. Multiple tools. No account, no tracking and no stash value lost on deployment.</p>
         </div>
-        {cap === 0 ? <div className="halt"><span>DAILY LIMIT</span><strong>EXTRACT.</strong><p>Your remaining targets are saved. Hit “New day” when the limit resets.</p></div>
-        : totalRemaining === 0 ? <div className="halt complete"><span>OBJECTIVE COMPLETE</span><strong>ALL CLEAR.</strong><p>Add a new reward, page, or full-pass target to generate another route.</p></div>
-        : ranking.length === 0 ? <div className="halt locked"><span>NO ACCESSIBLE ROUTE</span><strong>NO MAPS.</strong><p>None of your available maps contain the documents you still need. Enable another map above.</p></div>
-        : <><div className="best-label"><span>BEST OPTIONS NOW</span><b>{bestScore}/{cap} USEFUL</b></div><div className="best-list">{best.map((map, index) => <a className="map-card best-map" href={mapHref(map.name)} target="_blank" rel="noreferrer" aria-label={`Open ${map.name} interactive document map`} key={map.name}><div className="rank">0{index + 1}</div><div className="map-main"><span>RECOMMENDED · OPEN MAP ↗</span><h3>{map.name}</h3><div className="yield-list">{map.useful.map(({ doc, amount }) => <i key={doc.key}>{doc.short} <b>≤ {amount}</b></i>)}</div></div><div className="score"><strong>{map.score}</strong><small>USEFUL</small></div></a>)}</div>
-          <div className="warning"><b>⚠ PICKUP DISCIPLINE</b><p>Never collect more than the remaining number shown. Every extra document still burns one daily slot.</p></div>
-          <div className="next-label">ALTERNATE INSERTIONS</div><div className="alternates">{ranking.filter((map) => map.score < bestScore).slice(0, 5).map((map) => <a className="alt-row" href={mapHref(map.name)} target="_blank" rel="noreferrer" aria-label={`Open ${map.name} interactive document map`} key={map.name}><span>{map.name} ↗</span><i>{map.useful.map((item) => item.doc.short).join(" + ")}</i><b>{map.score}</b></a>)}</div></>}
-        <div className="logic-note"><span>ROUTE LOGIC</span><code>Σ min(needed, 5) → capped by daily slots</code><p>Equal scores stay equal. Choose by quests, survival rate, or pure spite.</p></div>
-      </aside>
-    </div>
-    <footer><span>UNOFFICIAL COMMUNITY TOOL</span><i />KORD BREACH DOCUMENT INTELLIGENCE <b>v0.1 PROPOSAL</b></footer>
-    <section className="legal-strip" aria-label="Credits and legal disclaimer">
-      <div>
-        <span>{"// CREDITS & DISCLAIMER"}</span>
-        <p>
-          Unofficial, non-commercial fan tool. Not affiliated with or endorsed by Battlestate Games.
-          Escape from Tarkov, its trademarks, and the game assets shown here belong to their respective owners.
-        </p>
-      </div>
-      <nav aria-label="Third-party links">
-        <a href="https://www.escapefromtarkov.com/" target="_blank" rel="noopener noreferrer">ESCAPE FROM TARKOV ↗</a>
-        <a href="https://github.com/Perofunyang/battlepass_interactive_map" target="_blank" rel="noopener noreferrer">MAPS BY PEROFUNYANG ↗</a>
-      </nav>
-    </section>
-    <a className="footer-wink" href="https://www.pachangasapp.com/" target="_blank" rel="noreferrer">
-      <span>If Labs has sent you back to the stash four times in a row, maybe it&apos;s time to touch some grass with friends (Spain only):</span>
-      <strong>PACHANGASAPP.COM ↗</strong>
-    </a>
-  </main>;
+
+        <div className="hub-tool-grid">
+          <a className="hub-tool-card active" href={`${basePath}/kord-breach-planner/`}>
+            <div className="hub-tool-code">01</div>
+            <div className="hub-tool-copy"><span>AVAILABLE NOW</span><h3>KORD BREACH<br />ROUTE PLANNER</h3><p>Enter the documents you need, lock maps you cannot access and get the strongest farming routes for your daily limit.</p></div>
+            <div className="hub-tool-meta"><span>ROUTE OPTIMIZATION</span><span>LOCAL SAVE</span><b>LAUNCH ↗</b></div>
+          </a>
+
+          {plannedTools.map((tool) => (
+            <article className="hub-tool-card locked" key={tool.code}>
+              <div className="hub-tool-code">{tool.code}</div>
+              <div className="hub-tool-copy"><span>RESERVED SLOT</span><h3>{tool.name}</h3><p>{tool.copy}</p></div>
+              <div className="hub-tool-meta"><span>CONCEPT</span><b>COMING SOON</b></div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <footer className="hub-footer">
+        <span>UNOFFICIAL // NON-COMMERCIAL // COMMUNITY BUILT</span>
+        <p>Not affiliated with or endorsed by Battlestate Games. Escape from Tarkov and its assets belong to their respective owners.</p>
+        <a href="https://github.com/Pinchitos/TarkovTools" target="_blank" rel="noopener noreferrer">PINCHITOS / TARKOVTOOLS ↗</a>
+      </footer>
+    </main>
+  );
 }

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kord Breach Route Planner",
-  description: "Unofficial community route planner for Escape from Tarkov Kord Breach documents.",
+  title: "TarkovTools — Community Field Utilities",
+  description: "Unofficial community-built utilities for Escape from Tarkov, including the Kord Breach document route planner.",
   other: {
     "codex-preview": "development",
   },
