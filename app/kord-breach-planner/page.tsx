@@ -3,9 +3,9 @@
 /* eslint-disable react-hooks/set-state-in-effect -- hydrate browser-only saved state after mount */
 
 import { useEffect, useMemo, useState } from "react";
+import { optimizeRoutes, type DocKey, type PlannerDocument } from "./route-optimizer";
 
-type DocKey = "technical" | "medical" | "user" | "test" | "blueprints" | "project" | "pmc" | "financial";
-type DocInfo = { key: DocKey; name: string; short: string; image: string; maps: string[] };
+type DocInfo = PlannerDocument & { image: string };
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const documents: DocInfo[] = [
@@ -64,14 +64,7 @@ export default function KordBreachPlanner() {
     if (ready) window.localStorage.setItem("kord-breach-planner", JSON.stringify({ remaining, dailyLimit, cap, enabledMaps }));
   }, [remaining, dailyLimit, cap, enabledMaps, ready]);
 
-  const ranking = useMemo(() => mapNames.filter((name) => enabledMaps.includes(name)).map((name) => {
-    const useful = documents.filter((doc) => doc.maps.includes(name) && remaining[doc.key] > 0).map((doc) => ({ doc, amount: Math.min(remaining[doc.key], 5) }));
-    const rawScore = useful.reduce((sum, item) => sum + item.amount, 0);
-    return { name, useful, score: Math.min(cap, rawScore) };
-  }).filter((map) => map.score > 0).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)), [remaining, cap, enabledMaps]);
-
-  const bestScore = ranking[0]?.score ?? 0;
-  const best = ranking.filter((map) => map.score === bestScore);
+  const routeOptimization = useMemo(() => optimizeRoutes(documents, remaining, cap, enabledMaps), [remaining, cap, enabledMaps]);
   const totalRemaining = Object.values(remaining).reduce((sum, value) => sum + value, 0);
 
   function updateNeed(key: DocKey, value: number) { setRemaining((current) => ({ ...current, [key]: Math.max(0, Math.floor(value || 0)) })); }
@@ -129,14 +122,24 @@ export default function KordBreachPlanner() {
         </div>
         {cap === 0 ? <div className="halt"><span>DAILY LIMIT</span><strong>EXTRACT.</strong><p>Your remaining targets are saved. Hit “New day” when the limit resets.</p></div>
         : totalRemaining === 0 ? <div className="halt complete"><span>OBJECTIVE COMPLETE</span><strong>ALL CLEAR.</strong><p>Add a new reward, page, or full-pass target to generate another route.</p></div>
-        : ranking.length === 0 ? <div className="halt locked"><span>NO ACCESSIBLE ROUTE</span><strong>NO MAPS.</strong><p>None of your available maps contain the documents you still need. Enable another map above.</p></div>
-        : <><div className="best-label"><span>BEST OPTIONS NOW</span><b>{bestScore}/{cap} USEFUL</b></div><div className="best-list">{best.map((map, index) => <a className="map-card best-map" href={mapHref(map.name)} target="_blank" rel="noreferrer" aria-label={`Open ${map.name} interactive document map`} key={map.name}><div className="rank">0{index + 1}</div><div className="map-main"><span>RECOMMENDED · OPEN MAP ↗</span><h3>{map.name}</h3><div className="yield-list">{map.useful.map(({ doc, amount }) => <i key={doc.key}>{doc.short} <b>≤ {amount}</b></i>)}</div></div><div className="score"><strong>{map.score}</strong><small>USEFUL</small></div></a>)}</div>
-          <div className="warning"><b>⚠ PICKUP DISCIPLINE</b><p>Never collect more than the remaining number shown. Every extra document still burns one daily slot.</p></div>
-          <div className="next-label">ALTERNATE INSERTIONS</div><div className="alternates">{ranking.filter((map) => map.score < bestScore).slice(0, 5).map((map) => <a className="alt-row" href={mapHref(map.name)} target="_blank" rel="noreferrer" aria-label={`Open ${map.name} interactive document map`} key={map.name}><span>{map.name} ↗</span><i>{map.useful.map((item) => item.doc.short).join(" + ")}</i><b>{map.score}</b></a>)}</div></>}
-        <div className="logic-note"><span>ROUTE LOGIC</span><code>Σ min(needed, 5) → capped by daily slots</code><p>Equal scores stay equal. Choose by quests, survival rate, or pure spite.</p></div>
+        : routeOptimization.plans.length === 0 ? <div className="halt locked"><span>NO ACCESSIBLE ROUTE</span><strong>NO MAPS.</strong><p>None of your available maps contain the documents you still need. Enable another map above.</p></div>
+        : <>
+          <div className="route-summary"><span>OPTIMIZED FOR TODAY</span><b>{routeOptimization.plans[0].raids} RAIDS · {routeOptimization.target}/{cap} SLOTS</b></div>
+          {routeOptimization.blocked > 0 && <div className="route-blocked"><b>{routeOptimization.blocked} DOCS BLOCKED</b><span>Enable another map to include them in the route.</span></div>}
+          <div className="route-plans">{routeOptimization.plans.map((plan, planIndex) => <details className={`route-plan ${planIndex === 0 ? "recommended" : "alternate"}`} open={planIndex === 0} key={plan.key}>
+            <summary className="route-plan-head"><div><span>{planIndex === 0 ? "PRIMARY ROUTE" : `ALTERNATIVE 0${planIndex}`}</span><h3>{plan.raids} RAID{plan.raids === 1 ? "" : "S"}</h3><i>{plan.stops.map((stop) => stop.name).join(" → ")}</i></div><b>{plan.total}<small> DOCS</small></b></summary>
+            <div className="route-stops">{plan.stops.map((stop, stopIndex) => <a className="route-stop" href={mapHref(stop.name)} target="_blank" rel="noreferrer" aria-label={`Open ${stop.name} interactive document map`} key={`${stop.name}-${stopIndex}`}>
+              <div className="route-stop-number">{String(stopIndex + 1).padStart(2, "0")}</div>
+              <div className="route-stop-main"><span>RAID {String(stopIndex + 1).padStart(2, "0")} · OPEN MAP ↗</span><h4>{stop.name}</h4><div className="route-pickups">{stop.pickups.map((pickup) => <i key={pickup.key}><b>{pickup.amount}×</b>{pickup.short}</i>)}</div></div>
+              <div className="route-stop-total"><strong>{stop.total}</strong><small>PICK UP</small></div>
+            </a>)}</div>
+          </details>)}</div>
+          <div className="warning"><b>⚠ EXACT PICKUP PLAN</b><p>Collect only the quantities shown for each raid. Extras still burn daily slots and are not included in the route.</p></div>
+        </>}
+        <div className="logic-note"><span>ROUTE LOGIC</span><code>minimum raids → exact allocation → daily cap</code><p>Each raid can schedule up to 5 of every document type available on that map.</p></div>
       </aside>
     </div>
-    <footer><span>UNOFFICIAL COMMUNITY TOOL</span><i />KORD BREACH DOCUMENT INTELLIGENCE <b>v0.1 PROPOSAL</b></footer>
+    <footer><span>UNOFFICIAL COMMUNITY TOOL</span><i />KORD BREACH DOCUMENT INTELLIGENCE <b>v0.2 ROUTE OPTIMIZER</b></footer>
     <section className="legal-strip" aria-label="Credits and legal disclaimer">
       <div>
         <span>{"// CREDITS & DISCLAIMER"}</span>

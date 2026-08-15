@@ -14,7 +14,9 @@ Enter the documents you still need, choose which maps you can access, and the pl
 
 - Configurable document targets for a reward, a page, or the whole pass
 - 30-document daily limit by default, with a custom limit option
-- Live route ranking after every pickup
+- Multi-raid route optimization that minimizes the number of raids
+- Exact document quantities for every map in each suggested route
+- Live route recalculation after every pickup
 - Map access filters for players who have not unlocked every location
 - Direct links to Perofunyang's interactive document maps
 - Local-only persistence through `localStorage`
